@@ -120,12 +120,12 @@ def unet_segmentation(input_img,img_pixelsize_x,img_pixelsize_y,
         print(e)
 
     # load results from io file and return
-    # output_h5 = h5py.File(iofile_path)
-    # score = output_h5['score'][:]
-    # output_h5.close()
-    # # #get segmentation mask by taking channel argmax
-    # segmentation_mask = np.squeeze(np.argmax(score, axis=1))
-    # return segmentation_mask
+    output_h5 = h5py.File(iofile_path)
+    score = output_h5['score'][:]
+    output_h5.close()
+    # #get segmentation mask by taking channel argmax
+    segmentation_mask = np.squeeze(np.argmax(score, axis=1))
+    return segmentation_mask
 
 
 def run_segmentation(input_directory, pixelsize, output_directory):
@@ -135,7 +135,7 @@ def run_segmentation(input_directory, pixelsize, output_directory):
     modelfile_path = "2d_cell_net_v0-cytoplasm.modeldef.h5"
     weightfile_path = "snapshot_cytoplasm_iter_1000.caffemodel.h5"
     iofile_path = "output.h5"
-    # out_path = Path(output_directory)
+    out_path = Path(output_directory)
     rootdir1 = Path(input_directory)
     """ Convert the tif to tiled tiff """
     i = 0
@@ -153,7 +153,7 @@ def run_segmentation(input_directory, pixelsize, output_directory):
                         # Loop through channels
                         for c in range(br.C):
 
-                            # with BioWriter(out_path.joinpath(f"final{i}.ome.tif"),metadata = br.metadata, backend='python') as bw:
+                            with BioWriter(out_path.joinpath(f"final{i}.ome.tif"),metadata = br.metadata, backend='python') as bw:
 
                                  # Loop through z-slices
                                 for z in range(br.Z):
@@ -167,9 +167,9 @@ def run_segmentation(input_directory, pixelsize, output_directory):
                                             x_max = min([br.X,x+tile_size])
 
                                             input_img = np.squeeze(br[y:y_max,x:x_max,z:z+1,c,t])
-                                            unet_segmentation(input_img,img_pixelsize_x, img_pixelsize_y,modelfile_path,weightfile_path,iofile_path)
-                                            # bw[y:y_max, x:x_max, z:z+1, 0, 0] = img.astype(br.dtype)
-                                            # os.remove("output.h5")
+                                            img = unet_segmentation(input_img,img_pixelsize_x, img_pixelsize_y,modelfile_path,weightfile_path,iofile_path)
+                                            bw[y:y_max, x:x_max, z:z+1, 0, 0] = img.astype(br.dtype)
+                                            os.remove("output.h5")
                                             
                             
                 i+=1
